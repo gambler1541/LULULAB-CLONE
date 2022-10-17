@@ -30,6 +30,12 @@ export const AppointmentWrap = styled.div`
       .calendarBox {
         width: 45%;
 
+        // 박명배 추가
+        .highlight {
+          background: red;
+          color: yellow;
+        }
+
         .react-calendar {
           margin-left: 3rem;
           margin-top: 3rem;

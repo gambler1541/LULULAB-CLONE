@@ -1,15 +1,66 @@
-import React from 'react';
+import { React, useState, useEffect } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import { AppointmentWrap } from './Appointment.styled';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
+import moment from 'moment';
 
 const Appointment = () => {
+  const [appointList, setAppointList] = useState([]); // 전체 예약 데이터
+  const [appointDateList, setAppointDateList] = useState([]); // 예약된 날짜의 모든 데이터
+  const [filterDateList, setFilterDateList] = useState([]); // 예약이 꽉 찬 날짜 데이터
   const navigate = useNavigate();
 
   const GoToRegistration = () => {
     navigate('/registration');
   };
+
+  const countByElement = (arr, val) => {
+    // 배열에 담긴 val 값이 몇개 있는지 확인하는 함수
+    return arr.reduce((a, v) => (v === val ? a + 1 : a), 0);
+  };
+
+  const convertDigitIn = str => {
+    // 2022/10/22 => 22-10-2022
+    return str.split('/').reverse().join('-');
+  };
+
+  const getDate = (arr, newArr) => {
+    // newArr의 최종모습은 => ['2022/10/07', '2022/10/08'..]
+    arr.map(item => {
+      newArr.push(item.appointmentDate);
+    });
+    return newArr;
+  };
+
+  const Message = date => {
+    if (filterDateList.find(x => x === moment(date).format('DD-MM-YYYY'))) {
+      alert('예약이 가득찼습니다.');
+    }
+  };
+
+  useEffect(() => {
+    fetch('/data/Appointment.json')
+      .then(res => res.json())
+      .then(data => {
+        setAppointList(data.appointment);
+        setAppointDateList(getDate(data.appointment, []));
+      });
+  }, []);
+
+  useEffect(() => {
+    let filterDate = [];
+    appointDateList.map(item => {
+      if (countByElement(appointDateList, item) == 9) {
+        filterDate.push(convertDigitIn(item));
+      }
+      // 중복된 날짜 제거
+      setFilterDateList(() =>
+        filterDate.filter((el, index) => filterDate.indexOf(el) === index)
+      );
+    });
+  }, [appointList]);
 
   return (
     <AppointmentWrap>
@@ -21,7 +72,18 @@ const Appointment = () => {
         </div>
         <div className="appointContents">
           <div className="calendarBox">
-            <Calendar />
+            <Calendar
+              tileClassName={({ date }) => {
+                if (
+                  filterDateList.find(
+                    x => x === moment(date).format('DD-MM-YYYY')
+                  )
+                ) {
+                  return 'highlight';
+                }
+              }}
+              onChange={Message}
+            />
           </div>
           <div className="appointBody">
             <div className="appointBtn" onClick={GoToRegistration}>
